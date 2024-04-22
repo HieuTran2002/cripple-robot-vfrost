@@ -18,13 +18,14 @@ class strategist():
     
     def __init__(self, gamemode=Gamemode.DEFAULT):
         self.gameMode = gamemode
-        if gamemode == Gamemode.THREESILO:
-            self.focusedSilos = [1, 2, 3]
 
     def drop(self, column):
         self.silos_self_count[column] += 1
         if self.silos_self_count[column] > 3:
             self.silos_self_count[column] = 3
+        if self.silos_self_count[column] == 0:
+            self.focusedSilos.append(column)
+
                 
     def focusedIsFilled(self):
         for i in self.focusedSilos:
@@ -71,9 +72,11 @@ class strategist():
 
             elif tempList[i] == 0:
                 scores[i] += 100
+                if len(self.focusedSilos) < 3:
+                    scores[i] += 50
                 # focus on un-occupied silo
 
-            elif self.silos_self_count[i] == 1 and daBo >= 3:
+            elif self.silos_self_count[i] == 1 and daBo >= 3 and len(self.focusedSilos) >= 3:
                 # focus on occupied silo
                 scores[i] += 150
 

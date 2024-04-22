@@ -19,7 +19,7 @@ tempBoSilo=10
 DaSet = 1
 
 # dev mode
-dev_mode = False
+dev_mode = True
 
 
 # Hàm thực thi cho tiểu trình 1
