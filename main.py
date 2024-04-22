@@ -23,6 +23,7 @@ def main(dev_mode):
         if key == ord('q'):
             break
     destroyAllWindows()
+    exit()
 
 
 if __name__ == "__main__":
