@@ -3,7 +3,6 @@ import numpy as np
 from imutils import resize
 import threading
 import time
-from minimax_silo import chooseSilo
 # from mastermind import mastermind
 from scanLine import line2silo
 from serial_utils import uart
