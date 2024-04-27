@@ -1,0 +1,2 @@
+ACTION=="add", ATTRS{idVendor}=="eba1", ATTRS{idProduct}=="7585", SYMLINK+="the_camera"
+
