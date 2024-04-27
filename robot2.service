@@ -1,0 +1,10 @@
+[Unit]
+Description=Robot 2 vision
+
+[Service]
+Type=simple
+ExecStart=/bin/bash /home/zegion/autorun.sh
+
+[Install]
+WantedBy=multi-user.target
+
