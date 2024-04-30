@@ -33,8 +33,9 @@ def thread_Func_Read_UART():
             b = uart.get()
             if b != 255:
                 RobotMode[n] = b
+            else:
+                n = 1
             n += 1
-            # print("RobotMode: ", RobotMode)
 
 
 def thread_Func_Write_UART():
@@ -82,7 +83,7 @@ def track(image, color, cam_angle):
     centers = []
     if cam_angle >= 16:
         contours_size_max = 5000
-        contours_size_min = 100  # 5000
+        contours_size_min = 1000  # 5000
     elif cam_angle >= 13:
         contours_size_max = 5000
         contours_size_min = 150
@@ -94,41 +95,51 @@ def track(image, color, cam_angle):
     BGR2YUV_frame = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)
     BGR2HSV_frame = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-    # HSV nền
-    lower_color = np.array([0, 0, 0])
-    upper_color = np.array([255, 255, 150])
-    mask_HSV = cv2.inRange(BGR2HSV_frame, lower_color, upper_color)
     
+    lower_hsv_bg = np.array([0, 0, 0])
+    upper_hsv_bg = np.array([0, 0, 0])
+
     if color == 1:  # blue
+        upper_hsv_bg = np.array([255, 255, 100])
         if cam_angle > 13:
-            dark_blue = [0, 255, 140, 255, 0, 130]  # blue
+            # dark_blue = [0, 255, 140, 255, 0, 130]  # blue
+            dark_blue = [0, 255, 130, 255, 0, 130]  # blue
         else:
-            dark_blue = [0, 255, 140, 255, 0, 120]
+            # dark_blue = [0, 255, 140, 255, 0, 120]
+            dark_blue = [0, 255, 0, 255, 150, 255]  # blue
+            dark_blue = [0, 160, 130, 255, 0, 130]  # blue
 
         lower_dark_blue = np.array([dark_blue[0], dark_blue[2], dark_blue[4]], dtype=np.uint8)
         upper_dark_blue = np.array([dark_blue[1], dark_blue[3], dark_blue[5]], dtype=np.uint8)
         mask = cv2.inRange(BGR2YUV_frame, lower_dark_blue, upper_dark_blue)
+        cv2.imshow("the blue", mask)
     else:  # 'red'
         if cam_angle > 13:
+            upper_hsv_bg = np.array([255, 255, 150])
             # dark_red = [0, 255, 0, 255, 170, 255]
-            dark_red = [100, 255, 0, 120, 170, 255]  # 1 4 2024
+            # dark_red = [100, 255, 0, 120, 170, 255]  # 1 4 2024
+            dark_red = [0, 255, 0, 255, 150, 255]
             
         else:
-            dark_red = [0, 255, 0, 125, 167, 247]  # 21 03 2024
+            dark_red = [0, 255, 0, 255, 150, 255]  # 21 03 2024
 
         lower_dark_red = np.array([dark_red[0], dark_red[2], dark_red[4]], dtype=np.uint8)
         upper_dark_red = np.array([dark_red[1], dark_red[3], dark_red[5]], dtype=np.uint8)
 
         mask = cv2.inRange(BGR2YUV_frame, lower_dark_red, upper_dark_red)
 
-    mask = cv2.bitwise_and(cv2.bitwise_not(mask_HSV), mask)
-    # cv2.imshow('mask', mask)
+    # HSV nền
+    if cam_angle > 13 or color == 1:
+        mask_HSV = cv2.inRange(BGR2HSV_frame, lower_hsv_bg, upper_hsv_bg)
+        mask = cv2.bitwise_and(cv2.bitwise_not(mask_HSV), mask)
+    
+
 
     # find contours in the mask and initialize the current
     cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     for cnt in cnts:
         cnt_area = int(cv2.contourArea(cnt))
-        # print("contour", cnt_area)
+        print("contour", cnt_area)
         if cnt_area > contours_size_min and cnt_area < contours_size_max:  # Chỉ xem xét các đối tượng có diện tích lớn hơn 100 pixel
             M = cv2.moments(cnt)
             if M['m00'] != 0:
@@ -159,26 +170,30 @@ def decrease_contrast(image, value):
 
 
 def analyzeSilos(image, color, vitriRobot):
-    tam_silo, current_silo, points = line2silo(image[70:140, :], color, vitriRobot, dev_mode)
+    tam_silo, current_silo, points, highest_y = line2silo(image[90:140, :], color, vitriRobot, dev_mode)
     if not tam_silo:
         return image, None, points
     
-    image = image[0:80, :]
+    highest_y += 90
+    print(highest_y)
+    image = image[0:highest_y, :]
 
     possible_silo = []
 
     contours_size_min = 50
     contours_size_max = 2000
     
-    # blur = cv2.GaussianBlur(image, (15, 15), 0)
+    blur = cv2.GaussianBlur(image, (5, 5), 0)
     BGR2YUV_frame = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)
     BGR2HSV_frame = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-
     # -------------------------------------------------------
     # Xác định phạm vi màu xanh dương YUV
+    # lower_color = np.array([0, 140, 0])
+    # upper_color = np.array([130, 255, 255])
     lower_color = np.array([0, 140, 0])
-    upper_color = np.array([130, 255, 255])
+    upper_color = np.array([255, 255, 130])
     mask_blue_YUV = cv2.inRange(BGR2YUV_frame, lower_color, upper_color)
+    cv2.imshow("the blue", mask_blue_YUV)
     # HSV
     lower_color = np.array([90, 160, 35])
     upper_color = np.array([255, 255, 255])
@@ -199,7 +214,8 @@ def analyzeSilos(image, color, vitriRobot):
     mask_red_HSV_2 = cv2.inRange(BGR2HSV_frame, lower_red, upper_red)
 
     mask_red = cv2.bitwise_and(mask_red_HSV_1 + mask_red_HSV_2, mask_red_YUV)
-    mask_blue = cv2.bitwise_and(mask_blue_YUV, mask_blue_HSV)
+    # mask_blue = cv2.bitwise_and(mask_blue_YUV, mask_blue_HSV)
+    mask_blue = mask_blue_YUV
 
     mask_tam_silo = np.zeros_like(mask_red)
     for t in range(0, len(tam_silo)):
@@ -243,7 +259,7 @@ def analyzeSilos(image, color, vitriRobot):
     contours, _ = cv2.findContours(mask_ok, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)
-        if y + h > 60 and w > 25:
+        if y + h > highest_y - 30 and w > 25:
             possible_silo.append([x, y, w, h])
         
     for t in range(0, len(tam_silo)):
@@ -325,13 +341,14 @@ def process(image, devMode=False):
     x = 0
     y = 0
 
-    # print("RobotMode:", RobotMode)
+    print("RobotMode:", RobotMode)
     # kiem tra xem du lieu truyen len co sai hay ko
     image = resize(image, width=frame_width)
     # preset robotmode
-    # RobotMode[1] = 9
+    # RobotMode[1] = 8
     # RobotMode[2] = 7
-    # RobotMode[0] = 2
+    # RobotMode[0] = 1    
+    # print(RobotMode)
 
     if image is None or RobotMode[0] < 1 or RobotMode[0] > 2:
         print("Robot EROR:")
@@ -352,6 +369,7 @@ def process(image, devMode=False):
                 selectBall = findClosestPoint(centers, (frame_center_x, frame_center_y))
             else:
                 selectBall = findClosestPoint(centers, (frame_center_x, frame_height))
+            print(selectBall, RobotMode[2])
         else:
             selectBall = findClosestPoint(centers, selectBall)
 

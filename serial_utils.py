@@ -30,7 +30,6 @@ class uart:
                     print("UART ERROR: ", e)
                     self.ser = None
                     return 0
-
             return int.from_bytes(self.ser.read(), 'little')
         except Exception as e:
             self.ser = None

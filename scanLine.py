@@ -94,10 +94,11 @@ def line2silo(image, color, lazer, devMode=False):
     current_silo = findSiloPositionBasedOnLazerValue(lazer, color)
 
     if current_silo is None:
-        return None, None, None
+        return None, None, None, None
 
     lines = []
     silos = [None] * 5
+    highest_y = 0
 
     # bluring
     image = cv2.GaussianBlur(image, (5, 5), 0)
@@ -121,8 +122,10 @@ def line2silo(image, color, lazer, devMode=False):
             top = list([cnt[cnt[:, :, 1].argmin()][0]][0])
             x, y, w, h = cv2.boundingRect(cnt)
             # check contour peak height
-            if y > 5 and y + h > 40:
+            if y > 5 and y + h > 30:
                 lines.append(top[0])
+                if top[1] > highest_y:
+                    highest_y = top[1]
                 if devMode:
                     cv2.circle(image, (top[0], top[1]), 8, gray, -1)
                     cv2.line(image, (top[0], 0), top, gray, 2)
@@ -157,4 +160,4 @@ def line2silo(image, color, lazer, devMode=False):
     if devMode:
         cv2.imshow("line", image)
 
-    return silos, current_silo, centerPoint
+    return silos, current_silo, centerPoint, highest_y

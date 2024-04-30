@@ -1,4 +1,4 @@
-from cv2 import VideoCapture
+from cv2 import VideoCapture, CAP_PROP_FRAME_WIDTH, CAP_PROP_FRAME_HEIGHT
 
 class Cam():
     cap = None
@@ -8,6 +8,8 @@ class Cam():
         self.isPiCam = _isPiCam
         if not _isPiCam:
             self.cap = VideoCapture(id)
+            self.cap.set(CAP_PROP_FRAME_WIDTH, 1280)
+            self.cap.set(CAP_PROP_FRAME_HEIGHT, 720)
         if _isPiCam:
             from picamera2 import Picamera2
             self.cap = Picamera2()

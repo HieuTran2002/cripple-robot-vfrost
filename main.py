@@ -5,7 +5,7 @@ import sys
 
 
 def main(dev_mode):
-    cam = Cam('../asset/test.h264', _isPiCam=True)
+    cam = Cam('/dev/video0', _isPiCam=False)
     # used to record the time when we processed last frame
     prev_frame_time = 0
     # used to record the time at which we processed current frame
