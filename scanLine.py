@@ -3,7 +3,7 @@ import numpy as np
 from math import sqrt
 from database import map
 
-color = [120, 255, 120, 255, 0, 255]
+color = [0, 255, 120, 255, 0, 255]
 lower = np.array([color[0], color[2], color[4]])
 upper = np.array([color[1], color[3], color[5]])
 
@@ -106,8 +106,9 @@ def line2silo(image, color, lazer, devMode=False):
     # color segmentation
     img_converted = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)
     mask = cv2.inRange(img_converted, lower, upper)
+    cv2.imshow('lines', mask)
     kernel = np.ones((5, 5), np.uint8)
-    mask = cv2.dilate(mask, kernel, iterations=1)
+    # mask = cv2.dilate(mask, kernel, iterations=1)
 
     cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -116,13 +117,13 @@ def line2silo(image, color, lazer, devMode=False):
         cnt_area = int(cv2.contourArea(cnt))
 
         # contour size filtering
-        if cnt_area > 100:
+        if cnt_area > 50:
             # print(cnt_area)
             # find the high point of the contour
             top = list([cnt[cnt[:, :, 1].argmin()][0]][0])
             x, y, w, h = cv2.boundingRect(cnt)
             # check contour peak height
-            if y > 5 and y + h > 30:
+            if y > 1 and y + h > 30:
                 lines.append(top[0])
                 if top[1] > highest_y:
                     highest_y = top[1]
@@ -131,7 +132,7 @@ def line2silo(image, color, lazer, devMode=False):
                     cv2.line(image, (top[0], 0), top, gray, 2)
                     cv2.rectangle(image, (top[0] - 20, 20), (top[0] + 20, top[1]), gray, 2)
                     cv2.rectangle(image, (x, y), (x + w, y + h), (200, 200, 255), thickness=2)
-                    # cv2.putText(original_image, str(cnt_area), (x, y), font, fontScale, cyan, thickness, lineType)
+                    cv2.putText(image, str(cnt_area), (x, y), font, fontScale, cyan, thickness, lineType)
                     cv2.drawContours(image, [cnt], -1, (200, 200, 255), 2)  # Vẽ đường viền xanh quanh đối tượng
 
     centerPoint = 0

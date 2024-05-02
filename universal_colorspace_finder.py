@@ -114,7 +114,7 @@ while True:
     image = resize(image, width=250)
 
     height, width = image.shape[:2]
-    image = cv2.GaussianBlur(image, (10, 10), 0)
+    image = cv2.GaussianBlur(image, (5, 5), 0)
     # mean_brightness = np.mean(image)
     # if mean_brightness > 127:
     #     image = cv2.convertScaleAbs(image, alpha=1 - (mean_brightness - 127) / 127.0, beta=0)  # Giảm độ sáng

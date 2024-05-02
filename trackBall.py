@@ -82,7 +82,7 @@ def findClosestPoint(points, center):
 def track(image, color, cam_angle):
     centers = []
     if cam_angle >= 16:
-        contours_size_max = 5000
+        contours_size_max = 7000
         contours_size_min = 1000  # 5000
     elif cam_angle >= 13:
         contours_size_max = 5000
@@ -100,14 +100,14 @@ def track(image, color, cam_angle):
     upper_hsv_bg = np.array([0, 0, 0])
 
     if color == 1:  # blue
-        upper_hsv_bg = np.array([255, 255, 100])
+        upper_hsv_bg = np.array([255, 255, 110])
         if cam_angle > 13:
             # dark_blue = [0, 255, 140, 255, 0, 130]  # blue
-            dark_blue = [0, 255, 130, 255, 0, 130]  # blue
+            dark_blue = [0, 255, 140, 255, 0, 130]  # blue
         else:
             # dark_blue = [0, 255, 140, 255, 0, 120]
             dark_blue = [0, 255, 0, 255, 150, 255]  # blue
-            dark_blue = [0, 160, 130, 255, 0, 130]  # blue
+            dark_blue = [0, 255, 140, 255, 0, 130]  # blue
 
         lower_dark_blue = np.array([dark_blue[0], dark_blue[2], dark_blue[4]], dtype=np.uint8)
         upper_dark_blue = np.array([dark_blue[1], dark_blue[3], dark_blue[5]], dtype=np.uint8)
@@ -115,13 +115,13 @@ def track(image, color, cam_angle):
         cv2.imshow("the blue", mask)
     else:  # 'red'
         if cam_angle > 13:
-            upper_hsv_bg = np.array([255, 255, 150])
+            upper_hsv_bg = np.array([255, 255, 180])
             # dark_red = [0, 255, 0, 255, 170, 255]
             # dark_red = [100, 255, 0, 120, 170, 255]  # 1 4 2024
-            dark_red = [0, 255, 0, 255, 150, 255]
+            dark_red = [0, 255, 0, 255, 160, 255]
             
         else:
-            dark_red = [0, 255, 0, 255, 150, 255]  # 21 03 2024
+            dark_red = [0, 255, 0, 255, 160, 255]  # 21 03 2024
 
         lower_dark_red = np.array([dark_red[0], dark_red[2], dark_red[4]], dtype=np.uint8)
         upper_dark_red = np.array([dark_red[1], dark_red[3], dark_red[5]], dtype=np.uint8)
@@ -175,7 +175,6 @@ def analyzeSilos(image, color, vitriRobot):
         return image, None, points
     
     highest_y += 90
-    print(highest_y)
     image = image[0:highest_y, :]
 
     possible_silo = []
