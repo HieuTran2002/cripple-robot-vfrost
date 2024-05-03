@@ -19,8 +19,11 @@ class colorspace(Enum):
 colorSpace = colorspace.yuv
 ball_color = 1
 useHSBbackground = True
+useHSVbackgroundDouble = False
+
 color = [0] * 6 
 color_bg = [0] * 6
+color_bg_2 = [0] * 6
 
 # 0, 145, 134, 255, 0, 255
 
@@ -33,19 +36,16 @@ def preset(value):
     
     if colorSpace == colorspace.yuv:
         if ball_color == 2:
-            color = [100, 255, 0, 120, 170, 255]  # 1 4 2024
-            color = [0, 255, 0, 255, 150, 255]  # red
-            color_bg = [0, 255, 0, 255, 0, 150]
+            color = [0, 255, 0, 255, 200, 255]  # red
         elif ball_color == 1:
-            color = [0, 255, 130, 255, 0, 156]  # blue
-            color = [0, 255, 140, 255, 0, 130]  # blue
-            color_bg = [0, 255, 0, 255, 0, 100]
+            color = [0, 255, 130, 255, 0, 130]  # blue
     elif colorSpace == colorspace.hsv:
         color = [0, 255, 0, 255, 0, 150]
     elif colorSpace == colorspace.hls:
         color = [0, 255, 0, 255, 170, 255]
     elif colorSpace == colorspace.lab:
         color = [0, 255, 0, 255, 170, 255]
+    color_bg = [0,255, 0, 255,0 ,220]
 
 
     cv2.setTrackbarPos('Huemin', 'Trackbars', color[0])
@@ -75,6 +75,15 @@ def trackBarChanged(value):
     print(f"{color[0]}, {color[1]}, {color[2]}, {color[3]}, {color[4]}, {color[5]}")
     pass
 
+def decrease_contrast(image, value):
+    return cv2.convertScaleAbs(image, alpha=value, beta=0) 
+
+def increase_brightness(image, value):
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    h, s, v = cv2.split(hsv)
+    v = cv2.add(v, value)
+    hsv = cv2.merge([h, s, v])
+    return cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
 
 cv2.namedWindow('Trackbars')
 
@@ -107,11 +116,16 @@ preset(0)
 
 while True:
     image = cam.cam_read()
+    
 
     original = image.copy()
     # image = cv2.imread("asset/12red.jpg")
 
     image = resize(image, width=250)
+    image = decrease_contrast(image, 1.2)
+    image = increase_brightness(image, 50)
+    
+    
 
     height, width = image.shape[:2]
     image = cv2.GaussianBlur(image, (5, 5), 0)
@@ -134,7 +148,8 @@ while True:
         img_converted = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
 
     # split image into single chanels
-    first, second, third = cv2.split(image)
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    first, second, third = cv2.split(hsv)
     grouped = np.concatenate([first, second, third], axis=0)
 
     # print(len(cv2.split(image)[0]))
@@ -162,14 +177,20 @@ while True:
 
     lower_bg = np.array([color_bg[0], color_bg[2], color_bg[4]])
     upper_bg = np.array([color_bg[1], color_bg[3], color_bg[5]])
+
+    lower_bg_2 = np.array([color_bg_2[0], color_bg_2[2], color_bg_2[4]])
+    upper_bg_2 = np.array([color_bg_2[1], color_bg_2[3], color_bg_2[5]])
     
     mask = cv2.inRange(img_converted, lower, upper)
     mask_bg = None
 
     if useHSBbackground:
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        mask_bg = cv2.inRange(gray, lower_bg, upper_bg)
-        mask = cv2.bitwise_and(cv2.bitwise_not(mask_bg), mask)
+        hsv_bg = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        mask_bg = cv2.inRange(hsv_bg, lower_bg, upper_bg)
+        if ball_color == 1 and useHSVbackgroundDouble:
+            mask_bg_2 = cv2.inRange(hsv_bg, lower_bg_2, upper_bg_2)
+            mask_bg = cv2.bitwise_or(mask_bg, mask_bg_2)
+        mask_result = cv2.bitwise_and(cv2.bitwise_not(mask_bg), mask)
 
 
     # print(type(mask))
@@ -179,8 +200,10 @@ while True:
     first, second, third = cv2.split(image)
     grouped = np.concatenate([first, second, third], axis=0)
 
-    imgFin = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-    result = np.concatenate([image, imgFin], axis=1)
+    mask_img_result = cv2.cvtColor(mask_result, cv2.COLOR_GRAY2BGR)
+    mask_img = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+    mask_img_bg = cv2.cvtColor(mask_bg, cv2.COLOR_GRAY2BGR)
+    result = np.concatenate([image, mask_img, mask_img_bg, mask_img_result], axis=1)
 
     # show result
     cv2.imshow('Trackbars', result)
