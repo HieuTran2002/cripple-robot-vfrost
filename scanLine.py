@@ -104,10 +104,10 @@ def line2silo(image, color, lazer, devMode=False):
     image = cv2.GaussianBlur(image, (5, 5), 0)
 
     # color segmentation
+    kernel = np.ones((5, 5), np.uint8)
     img_converted = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)
     mask = cv2.inRange(img_converted, lower, upper)
-    cv2.imshow('lines', mask)
-    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.dilate(mask, kernel, iterations=1)
     # mask = cv2.dilate(mask, kernel, iterations=1)
 
     cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -128,6 +128,7 @@ def line2silo(image, color, lazer, devMode=False):
                 if top[1] > highest_y:
                     highest_y = top[1]
                 if devMode:
+                    cv2.imshow('lines', mask)
                     cv2.circle(image, (top[0], top[1]), 8, gray, -1)
                     cv2.line(image, (top[0], 0), top, gray, 2)
                     cv2.rectangle(image, (top[0] - 20, 20), (top[0] + 20, top[1]), gray, 2)

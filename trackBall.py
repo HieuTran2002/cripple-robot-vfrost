@@ -83,7 +83,7 @@ def track(image, color, cam_angle):
     centers = []
     if cam_angle >= 16:
         contours_size_max = 7000
-        contours_size_min = 1000  # 5000
+        contours_size_min = 500  # 5000
     elif cam_angle >= 13:
         contours_size_max = 5000
         contours_size_min = 150
@@ -96,42 +96,34 @@ def track(image, color, cam_angle):
     BGR2HSV_frame = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     
-    lower_hsv_bg = np.array([0, 0, 0])
-    upper_hsv_bg = np.array([0, 0, 0])
+     # HSV nền
+    lower_color = np.array([0, 0, 0])
+    upper_color = np.array([255, 255, 150])
+    mask_HSV = cv2.inRange(BGR2HSV_frame, lower_color, upper_color)
 
     if color == 1:  # blue
-        upper_hsv_bg = np.array([255, 255, 110])
         if cam_angle > 13:
-            # dark_blue = [0, 255, 140, 255, 0, 130]  # blue
             dark_blue = [0, 255, 140, 255, 0, 130]  # blue
         else:
-            # dark_blue = [0, 255, 140, 255, 0, 120]
-            dark_blue = [0, 255, 0, 255, 150, 255]  # blue
-            dark_blue = [0, 255, 140, 255, 0, 130]  # blue
+            dark_blue = [0, 255, 140, 255, 0, 120]
 
         lower_dark_blue = np.array([dark_blue[0], dark_blue[2], dark_blue[4]], dtype=np.uint8)
         upper_dark_blue = np.array([dark_blue[1], dark_blue[3], dark_blue[5]], dtype=np.uint8)
         mask = cv2.inRange(BGR2YUV_frame, lower_dark_blue, upper_dark_blue)
-        cv2.imshow("the blue", mask)
     else:  # 'red'
         if cam_angle > 13:
-            upper_hsv_bg = np.array([255, 255, 180])
-            # dark_red = [0, 255, 0, 255, 170, 255]
-            # dark_red = [100, 255, 0, 120, 170, 255]  # 1 4 2024
-            dark_red = [0, 255, 0, 255, 160, 255]
-            
+            dark_red = [100, 255, 0, 120, 170, 255]  # 1 4 2024
         else:
-            dark_red = [0, 255, 0, 255, 160, 255]  # 21 03 2024
+            # dark_red = [0, 255, 0, 125, 167, 247]  # 21 03 2024
+            dark_red = [0, 255, 0, 255, 150, 255]
 
         lower_dark_red = np.array([dark_red[0], dark_red[2], dark_red[4]], dtype=np.uint8)
         upper_dark_red = np.array([dark_red[1], dark_red[3], dark_red[5]], dtype=np.uint8)
 
         mask = cv2.inRange(BGR2YUV_frame, lower_dark_red, upper_dark_red)
 
-    # HSV nền
-    if cam_angle > 13 or color == 1:
-        mask_HSV = cv2.inRange(BGR2HSV_frame, lower_hsv_bg, upper_hsv_bg)
-        mask = cv2.bitwise_and(cv2.bitwise_not(mask_HSV), mask)
+    mask = cv2.bitwise_and(cv2.bitwise_not(mask_HSV), mask)
+    # cv2.imshow('mask', mask)
     
 
 
@@ -139,7 +131,7 @@ def track(image, color, cam_angle):
     cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     for cnt in cnts:
         cnt_area = int(cv2.contourArea(cnt))
-        print("contour", cnt_area)
+        # print("contour", cnt_area)
         if cnt_area > contours_size_min and cnt_area < contours_size_max:  # Chỉ xem xét các đối tượng có diện tích lớn hơn 100 pixel
             M = cv2.moments(cnt)
             if M['m00'] != 0:
@@ -340,7 +332,7 @@ def process(image, devMode=False):
     x = 0
     y = 0
 
-    print("RobotMode:", RobotMode)
+    # print("RobotMode:", RobotMode)
     # kiem tra xem du lieu truyen len co sai hay ko
     image = resize(image, width=frame_width)
     # preset robotmode
@@ -368,7 +360,7 @@ def process(image, devMode=False):
                 selectBall = findClosestPoint(centers, (frame_center_x, frame_center_y))
             else:
                 selectBall = findClosestPoint(centers, (frame_center_x, frame_height))
-            print(selectBall, RobotMode[2])
+            # print(selectBall, RobotMode[2])
         else:
             selectBall = findClosestPoint(centers, selectBall)
 
