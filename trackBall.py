@@ -88,6 +88,50 @@ def findClosestPoint(points, center):
         return 0
 
 
+def findBallWideView(image, color):
+    image = image[50:, :]
+    lower_color = np.array([0, 0, 0])
+    upper_color = np.array([255, 255, 180])
+    BGR2YUV_frame = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)
+    BGR2HSV_frame = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    mask_HSV = cv2.inRange(BGR2HSV_frame, lower_color, upper_color)
+    if color == 1:  # blue
+        dark_blue = [0, 255, 130, 255, 0, 130]  # blue
+        lower = np.array([dark_blue[0], dark_blue[2], dark_blue[4]], dtype=np.uint8)
+        upper = np.array([dark_blue[1], dark_blue[3], dark_blue[5]], dtype=np.uint8)
+        mask = cv2.inRange(BGR2YUV_frame, lower, upper)
+    else:  # 'red'
+        dark_red = [0, 255, 0, 255, 200, 255]  # red
+        lower = np.array([dark_red[0], dark_red[2], dark_red[4]], dtype=np.uint8)
+        upper = np.array([dark_red[1], dark_red[3], dark_red[5]], dtype=np.uint8)
+        mask = cv2.inRange(BGR2YUV_frame, lower, upper)
+
+    mask = cv2.bitwise_and(cv2.bitwise_not(mask_HSV), mask)
+
+    # find contours in the mask and initialize the current
+    contours_size_min = 10
+    contours_size_max = 1000
+    cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    for cnt in cnts:
+        cnt_area = int(cv2.contourArea(cnt))
+        # print("contour_wide view", cnt_area)
+        if cnt_area > contours_size_min and cnt_area < contours_size_max:  # Chỉ xem xét các đối tượng có diện tích lớn hơn 100 pixel
+            M = cv2.moments(cnt)
+            if M['m00'] != 0:
+                cx = int(M['m10'] / M['m00'])
+                cy = int(M['m01'] / M['m00'])
+                centers.append((cx, cy))
+
+                if dev_mode:
+                    cv2.drawContours(image, [cnt], -1, (0, 255, 0), 2)  # Vẽ đường viền xanh quanh đối tượng
+    
+    center = findClosestPoint(centers, (frame_width / 2, frame_height))
+    if dev_mode:
+        cv2.circle(image, center, 5, (0, 255, 255), 10)
+        imgFin = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+        image = np.concatenate((image, imgFin), axis=1)
+    return image, center
+
 def track(image, color, cam_angle):
     centers = []
     if cam_angle >= 16:
@@ -197,7 +241,6 @@ def analyzeSilos(image, color, vitriRobot):
     lower_color = np.array([0, 140, 0])
     upper_color = np.array([255, 255, 130])
     mask_blue_YUV = cv2.inRange(BGR2YUV_frame, lower_color, upper_color)
-    cv2.imshow("the blue", mask_blue_YUV)
     # HSV
     lower_color = np.array([90, 160, 35])
     upper_color = np.array([255, 255, 255])
@@ -351,10 +394,10 @@ def process(image, devMode=False):
     image = decrease_contrast(image, 1.2)
     image = increase_brightness(image, 50)
     # preset robotmode
-    # RobotMode[1] = 8
-    # RobotMode[2] = 7
-    # RobotMode[0] = 1    
-    # print(RobotMode)
+    RobotMode[1] = 11
+    RobotMode[2] = 7
+    RobotMode[0] = 1    
+    print(RobotMode)
 
     if image is None or RobotMode[0] < 1 or RobotMode[0] > 2:
         print("Robot EROR:")
@@ -365,6 +408,8 @@ def process(image, devMode=False):
     if RobotMode[1] == 10:  # reset viec tim bong
         selectBall = 0
         result = image
+    elif RobotMode[1] == 11:
+        result, _ = findBallWideView(image, RobotMode[0])
     elif RobotMode[1] == 9:  # tim bong
         result, centers = track(image, RobotMode[0], RobotMode[2])
         if dev_mode:
